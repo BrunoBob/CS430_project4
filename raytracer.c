@@ -158,6 +158,87 @@ double shoot(double* Ro, double* Rd, objectList object){
   return t;
 }
 
+double* directShade(double* color, lightList light, objectList object, double* Rdn, double* Rd, double* Vo, double* Ron, double dist){
+  double* N = NULL;
+  double* L = NULL;
+  double* R = NULL;
+  double* V = NULL;
+
+  if(object->kind == 1){
+    N = object->plane.normal;
+  }
+  else{
+    N = subVector(Ron, object->position);
+    normalize(N);
+  }
+  L = Rdn;
+  normalize(L);
+  R = subVector(scaleVector(N, dotProduct(N, L) * 2),L);
+  normalize(R);
+  V = scaleVector(Rd, -1);
+  normalize(V);
+
+  double* diffuseColor = diffuse(object->diffuseColor, light->color, N, L);
+  double* specularColor = specular(object->specularColor, light->color, R, V, N, L, 20);
+
+  double angAtt = fAng(Vo, light->direction, light->theta, light->angA0);
+  double radAtt = fRad(dist, light->radA0, light->radA1, light->radA2);
+
+  color[0] += angAtt * radAtt * (diffuseColor[0] + specularColor[0]);
+  color[1] += angAtt * radAtt * (diffuseColor[1] + specularColor[1]);
+  color[2] += angAtt * radAtt * (diffuseColor[2] + specularColor[2]);
+
+  return color;
+}
+
+double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT){
+  double* color = getVector(0,0,0);
+  if(object != NULL){ //If object detected
+    while(light != NULL){ //For all lights
+      double* Ron = addVector(scaleVector(Rd, bestT), Ro); //Position of interserction point
+      double* Rdn = subVector(light->position, Ron); //Vector from point to light
+      normalize(Rdn);
+
+      double* Vo = subVector(Ron, light->position);
+      double dist = sqrt(sqr(Vo[0]) + sqr(Vo[1]) + sqr(Vo[2]));
+      normalize(Vo);
+
+      objectList tempList = allObject;
+      double t = 0;
+      int shadow = 0;
+
+      //Shadow detection
+      while(tempList != NULL){ //For all objects
+        if(tempList != object){ //
+
+          t = shoot(Ro, Rd, tempList);
+
+          if(t > 0 && t < dist){ //If distance of interserction < distance to light then shadow detected from this light
+            shadow = 1;
+            break;
+          }
+        }
+        tempList = tempList->next;
+      }
+      if(!shadow){
+        color = directShade(color, light, object, Rdn, Rd, Vo, Ron, dist);
+      }
+
+      //Compute reflected ray
+
+      //reflected light = reflectivity * shade( rreflected ray);
+
+      //Compute refracted ray
+
+      //refracted light = refractivity * shade (refracted ray);
+
+
+      light = light->next;
+    }
+  }
+  return color;
+}
+
 int main(int argc, char *argv[]){
   if(argc < 5){
     fprintf(stderr, "Error: Expected ./raycaster width height input.json output.ppm");
@@ -203,6 +284,8 @@ int main(int argc, char *argv[]){
       objectList closestObject = NULL;
       objectList tempList = list;
 
+
+      //Closest object detection
       while (tempList != NULL) {
 
         t = shoot(Ro, Rd, tempList);
@@ -217,67 +300,9 @@ int main(int argc, char *argv[]){
       double* color = getVector(0,0,0);
       lightList tempLights = lights;
 
-      if(closestObject != NULL){ //If object detected
-        while(tempLights != NULL){ //For all lights
-          double* Ron = addVector(scaleVector(Rd, bestT), Ro); //Position of interserction point
-          double* Rdn = subVector(tempLights->position, Ron); //Vector from point to light
-          normalize(Rdn);
+      //Shading
+      color = shade(tempLights, list, closestObject, Ro, Rd, bestT);
 
-          double* Vo = subVector(Ron, tempLights->position);
-          normalize(Vo);
-          double* Vl = subVector(Ron,tempLights->position);
-          double dist = sqrt(sqr(Vl[0]) + sqr(Vl[1]) + sqr(Vl[2]));
-
-          tempList = list;
-          t = 0;
-          int shadow = 0;
-
-          //Shadow detection
-          while(tempList != NULL){ //For all objects
-            if(tempList != closestObject){ //
-
-              t = shoot(Ro, Rd, tempList);
-
-              if(t > 0 && t < dist){ //If distance of interserction < distance to light then shadow detected from this light
-                shadow = 1;
-                break;
-              }
-            }
-            tempList = tempList->next;
-          }
-          if(!shadow){
-            double* N = NULL;
-            double* L = NULL;
-            double* R = NULL;
-            double* V = NULL;
-
-            if(closestObject->kind == 1){
-              N = closestObject->plane.normal;
-            }
-            else{
-              N = subVector(Ron, closestObject->position);
-              normalize(N);
-            }
-            L = Rdn;
-            normalize(L);
-            R = subVector(scaleVector(N, dotProduct(N, L) * 2),L);
-            normalize(R);
-            V = scaleVector(Rd, -1);
-            normalize(V);
-
-            double* diffuseColor = diffuse(closestObject->diffuseColor, tempLights->color, N, L);
-            double* specularColor = specular(closestObject->specularColor, tempLights->color, R, V, N, L, 20);
-
-            double angAtt = fAng(Vo, tempLights->direction, tempLights->theta, tempLights->angA0);
-            double radAtt = fRad(dist, tempLights->radA0, tempLights->radA1, tempLights->radA2);
-
-            color[0] += angAtt * radAtt * (diffuseColor[0] + specularColor[0]);
-            color[1] += angAtt * radAtt * (diffuseColor[1] + specularColor[1]);
-            color[2] += angAtt * radAtt * (diffuseColor[2] + specularColor[2]);
-          }
-          tempLights = tempLights->next;
-        }
-      }
       data[ 3 * (x + width * (height - 1 - y))] = clamp(color[0]) * 255;
       data[ 3 * (x + width * (height - 1 - y)) + 1] = clamp(color[1]) * 255;
       data[ 3 * (x + width * (height - 1 - y)) + 2] = clamp(color[2]) * 255;
