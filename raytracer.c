@@ -18,7 +18,7 @@ void printObjects(objectList list){
       printf("Position : %lf  %lf  %lf\n", list->position[0], list->position[1], list->position[2]);
       printf("Normal : %lf  %lf  %lf\n", list->plane.normal[0], list->plane.normal[1], list->plane.normal[2]);
     }
-    printf("Reflectivity : %lf\n", list->reflectivity);
+    printf("reflexivity : %lf\n", list->reflexivity);
     printf("Refractivity : %lf\n", list->refractivity);
     printf("ior : %lf\n", list->ior);
     printf("\n");
@@ -54,7 +54,7 @@ void printLights(lightList list){
 
 //Compute if interserction with a plane
 double planeIntersection(double* Ro, double* Rd, double* position, double* normal){
-  double t = 0;
+  double t = INFINITY;
   normalize(normal); //Just in case
   double denom = dotProduct(normal, Rd);
   if(sqrt(sqr(denom)) > 0.00001){
@@ -65,7 +65,7 @@ double planeIntersection(double* Ro, double* Rd, double* position, double* norma
 
 //Compute if interserction with a sphere
 double sphereIntersection(double* Ro, double* Rd, double* position, double radius){
-  double t;
+  double t = INFINITY;
 
   double* RoSubPosition = subVector(Ro, position);
   double b = 2 * dotProduct(Rd, RoSubPosition);
@@ -191,20 +191,25 @@ double* directShade(double* color, lightList light, objectList object, double* R
   return color;
 }
 
-double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT){
+double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT, int level){
   double* color = getVector(0,0,0);
   if(object != NULL){ //If object detected
-    while(light != NULL){ //For all lights
-      double* Ron = addVector(scaleVector(Rd, bestT), Ro); //Position of interserction point
-      double* Rdn = subVector(light->position, Ron); //Vector from point to light
+
+    double* Ron = addVector(scaleVector(Rd, bestT), Ro); //Position of interserction point
+
+
+    lightList tempLights = light;
+
+    while(tempLights != NULL){ //For all lights
+      double* Rdn = subVector(tempLights->position, Ron); //Vector from point to light
       normalize(Rdn);
 
-      double* Vo = subVector(Ron, light->position);
+      double* Vo = subVector(Ron, tempLights->position);
       double dist = sqrt(sqr(Vo[0]) + sqr(Vo[1]) + sqr(Vo[2]));
       normalize(Vo);
 
       objectList tempList = allObject;
-      double t = 0;
+      double t;
       int shadow = 0;
 
       //Shadow detection
@@ -221,20 +226,51 @@ double* shade(lightList light, objectList allObject, objectList object, double* 
         tempList = tempList->next;
       }
       if(!shadow){
-        color = directShade(color, light, object, Rdn, Rd, Vo, Ron, dist);
+        color = directShade(color, tempLights, object, Rdn, Rd, Vo, Ron, dist);
       }
-
-      //Compute reflected ray
-
-      //reflected light = reflectivity * shade( rreflected ray);
-
-      //Compute refracted ray
-
-      //refracted light = refractivity * shade (refracted ray);
-
-
-      light = light->next;
+      tempLights = tempLights->next;
     }
+
+    //Compute normal vector of the object
+    double* N;
+    if(object->kind == 1){
+      N = object->plane.normal;
+    }
+    else{
+      N = subVector(Ron, object->position);
+      normalize(N);
+    }
+
+    //Compute reflected ray
+    double* reflectedRay = subVector(Rd,scaleVector(N, dotProduct(Rd,N)*2)); // Um = ur - 2(Ur.n)n
+    normalize(reflectedRay);
+    double t;
+    double reflectedT = INFINITY;
+    objectList tempList = allObject;
+    objectList reflectedObject = NULL;
+
+    while(tempList != NULL){ //For all objects
+      if(tempList != object){ //
+
+        t = shoot(Ro, reflectedRay, tempList);
+
+        if(t > 0 && t < reflectedT){ //If object detected
+          reflectedT = t;
+          reflectedObject = tempList;
+        }
+      }
+      tempList = tempList->next;
+    }
+
+    double* reflectedColor = shade(light, allObject, reflectedObject, Ro, reflectedRay, reflectedT, level+1);
+
+    //reflected light = reflectivity * shade( rreflected ray);
+
+    //Compute refracted ray
+
+    //refracted light = refractivity * shade (refracted ray);
+
+    color = addVector(scaleVector(color,(1 - object->reflexivity)),scaleVector(reflectedColor, object->reflexivity));
   }
   return color;
 }
@@ -301,7 +337,7 @@ int main(int argc, char *argv[]){
       lightList tempLights = lights;
 
       //Shading
-      color = shade(tempLights, list, closestObject, Ro, Rd, bestT);
+      color = shade(tempLights, list, closestObject, Ro, Rd, bestT, 0);
 
       data[ 3 * (x + width * (height - 1 - y))] = clamp(color[0]) * 255;
       data[ 3 * (x + width * (height - 1 - y)) + 1] = clamp(color[1]) * 255;

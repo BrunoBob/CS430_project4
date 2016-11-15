@@ -13,7 +13,7 @@ typedef struct object{
   double* diffuseColor;
   double* specularColor;
   double* position;
-  double reflectivity;
+  double reflexivity;
   double refractivity;
   double ior;
   union {
@@ -46,7 +46,7 @@ void printLights(lightList list);
 
 double shoot(double* Ro, double* Rd, objectList object);
 
-double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT);
+double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT, int level);
 
 double* directShade(double* color, lightList light, objectList object, double* Rdn, double* Rd, double* Vo, double* Ron, double dist);
 

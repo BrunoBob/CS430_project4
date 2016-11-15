@@ -186,7 +186,6 @@ components parseFile(char* filename, double* width, double* height) {
       }
       else if (strcmp(value, "sphere") == 0) {
         currentKind = 0 ;
-        printf("WTF2\n" );
         if(tempList == NULL){
           tempList = createObject();
         }
@@ -197,7 +196,6 @@ components parseFile(char* filename, double* width, double* height) {
       }
       else if (strcmp(value, "plane") == 0) {
         currentKind = 1 ;
-        printf("WTF\n" );
         if(tempList == NULL){
           tempList = createObject();
         }
@@ -263,8 +261,8 @@ components parseFile(char* filename, double* width, double* height) {
             else if(strcmp(key, "angular-a0") == 0){
               tempLights->angA0 = value;
             }
-            else if(strcmp(key, "reflectivity") == 0){
-              tempList->reflectivity = value;
+            else if(strcmp(key, "reflexivity") == 0){
+              tempList->reflexivity = value;
             }
             else if(strcmp(key, "refractivity") == 0){
               tempList->refractivity = value;
