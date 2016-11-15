@@ -104,7 +104,7 @@ static inline void normalize(double* v) {
 }
 
 static inline double radToDeg(double angle){
-  return angle * 57.2958;
+  return (angle * 57.2958);
 }
 
 static inline double clamp(double value){

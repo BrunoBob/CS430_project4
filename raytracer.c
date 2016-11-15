@@ -109,10 +109,14 @@ double fAng(double* Vo, double* Vl, double angleMax, double a0){
     return 1; //Not spotlight
   }
   double dot = dotProduct(Vo, Vl);
-  if(radToDeg(acos(dot)) > angleMax){
+  double angle = radToDeg(acos(dot));
+
+  if(angle > angleMax){
     return 0;
   }
-  return pow(dot, a0);
+
+  //if (dot <0) (dot = dot * -1);
+  return (pow(dot, a0));
 }
 
 //Compute radial attenuation of a light
@@ -263,14 +267,15 @@ double* shade(lightList light, objectList allObject, objectList object, double* 
     }
 
     double* reflectedColor = shade(light, allObject, reflectedObject, Ro, reflectedRay, reflectedT, level+1);
+    reflectedColor = scaleVector(reflectedColor,object->reflexivity);
 
     //reflected light = reflectivity * shade( rreflected ray);
 
     //Compute refracted ray
 
     //refracted light = refractivity * shade (refracted ray);
-
-    color = addVector(scaleVector(color,(1 - object->reflexivity)),scaleVector(reflectedColor, object->reflexivity));
+    color = scaleVector(color, (1 - object->reflexivity));
+    color = addVector(color, reflectedColor);
   }
   return color;
 }
