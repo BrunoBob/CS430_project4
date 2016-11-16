@@ -238,7 +238,7 @@ components parseFile(char* filename, double* width, double* height) {
 
           if ((strcmp(key, "width") == 0) || (strcmp(key, "height") == 0) || (strcmp(key, "radius") == 0) || (strcmp(key, "radial-a0") == 0)
           || (strcmp(key, "radial-a1") == 0) || (strcmp(key, "radial-a2") == 0) || (strcmp(key, "angular-a0") == 0) || (strcmp(key, "theta") == 0)
-          || (strcmp(key, "reflexivity") == 0) || (strcmp(key, "refractivity") == 0) || (strcmp(key, "ior") == 0)) {
+          || (strcmp(key, "reflectivity") == 0) || (strcmp(key, "refractivity") == 0) || (strcmp(key, "ior") == 0)) {
             double value = readNumber(json);
             if(strcmp(key, "radius") == 0){
               tempList->sphere.radius = value;
@@ -261,8 +261,8 @@ components parseFile(char* filename, double* width, double* height) {
             else if(strcmp(key, "angular-a0") == 0){
               tempLights->angA0 = value;
             }
-            else if(strcmp(key, "reflexivity") == 0){
-              tempList->reflexivity = value;
+            else if(strcmp(key, "reflectivity") == 0){
+              tempList->reflectivity = value;
             }
             else if(strcmp(key, "refractivity") == 0){
               tempList->refractivity = value;

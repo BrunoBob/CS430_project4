@@ -18,8 +18,8 @@ void printObjects(objectList list){
       printf("Position : %lf  %lf  %lf\n", list->position[0], list->position[1], list->position[2]);
       printf("Normal : %lf  %lf  %lf\n", list->plane.normal[0], list->plane.normal[1], list->plane.normal[2]);
     }
-    printf("reflexivity : %lf\n", list->reflexivity);
     printf("Refractivity : %lf\n", list->refractivity);
+    printf("Reflectivity : %lf\n", list->reflectivity);
     printf("ior : %lf\n", list->ior);
     printf("\n");
     list = list->next;
@@ -146,8 +146,10 @@ double* specular(double* objSpecular, double* lightColor, double* R, double* V, 
   return getVector(0,0,0);
 }
 
+//Chek if interserction of a ray to an object
 double shoot(double* Ro, double* Rd, objectList object){
   double t;
+
   switch (object->kind) {
     case 0:
     t = sphereIntersection(Ro, Rd, object->position, object->sphere.radius);
@@ -162,6 +164,7 @@ double shoot(double* Ro, double* Rd, objectList object){
   return t;
 }
 
+//Compute the direct lightning of an object
 double* directShade(double* color, lightList light, objectList object, double* Rdn, double* Rd, double* Vo, double* Ron, double dist){
   double* N = NULL;
   double* L = NULL;
@@ -195,6 +198,7 @@ double* directShade(double* color, lightList light, objectList object, double* R
   return color;
 }
 
+//Compute the light
 double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT, int level){
   double* color = getVector(0,0,0);
   if(object != NULL){ //If object detected
@@ -218,14 +222,13 @@ double* shade(lightList light, objectList allObject, objectList object, double* 
 
       //Shadow detection
       while(tempList != NULL){ //For all objects
-        if(tempList != object){ //
+        double*  Ron2 = addVector(Ron, scaleVector(Rdn, EPSILON));
 
-          t = shoot(Ro, Rd, tempList);
+        t = shoot(Ron2, Rdn, tempList);
 
-          if(t > 0 && t < dist){ //If distance of interserction < distance to light then shadow detected from this light
-            shadow = 1;
-            break;
-          }
+        if(t > 0 && t < dist){ //If distance of interserction < distance to light then shadow detected from this light
+          shadow = 1;
+          break;
         }
         tempList = tempList->next;
       }
@@ -256,7 +259,7 @@ double* shade(lightList light, objectList allObject, objectList object, double* 
     while(tempList != NULL){ //For all objects
       if(tempList != object){ //
 
-        t = shoot(Ro, reflectedRay, tempList);
+        t = shoot(Ron, reflectedRay, tempList);
 
         if(t > 0 && t < reflectedT){ //If object detected
           reflectedT = t;
@@ -267,14 +270,14 @@ double* shade(lightList light, objectList allObject, objectList object, double* 
     }
 
     double* reflectedColor = shade(light, allObject, reflectedObject, Ro, reflectedRay, reflectedT, level+1);
-    reflectedColor = scaleVector(reflectedColor,object->reflexivity);
+    reflectedColor = scaleVector(reflectedColor,object->reflectivity);
 
     //reflected light = reflectivity * shade( rreflected ray);
 
     //Compute refracted ray
 
     //refracted light = refractivity * shade (refracted ray);
-    color = scaleVector(color, (1 - object->reflexivity));
+    color = scaleVector(color, (1 - object->reflectivity));
     color = addVector(color, reflectedColor);
   }
   return color;

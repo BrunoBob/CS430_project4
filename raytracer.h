@@ -8,12 +8,14 @@
 #define ERROR_RAYCAST 2
 #define ERROR_WRITING 3
 
+#define EPSILON 0.01
+
 typedef struct object{
   int kind; // 0 = sphere, 1 = plane
   double* diffuseColor;
   double* specularColor;
   double* position;
-  double reflexivity;
+  double reflectivity;
   double refractivity;
   double ior;
   union {

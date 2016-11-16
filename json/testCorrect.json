@@ -8,21 +8,21 @@
     "diffuse_color": [1, 0, 0],
     "specular_color": [1, 1, 1],
     "position": [1, 1, 5],
-    "reflexivity": 0.1
+    "reflectivity": 0.4
   },
   {"type": "sphere",
     "radius": 0.25,
     "diffuse_color": [0, 0, 1],
     "specular_color": [1, 1, 1],
     "position": [2, 1, 4],
-    "reflexivity": 0.1
+    "reflectivity": 0.2
   },
   {"type": "plane",
     "normal": [0, 1, 0],
     "diffuse_color": [0, 1, 0],
     "specular_color": [1, 1, 1],
     "position": [0, -1, 0],
-    "reflexivity": 0.4
+    "reflectivity": 0.4
   },
   {"type": "light",
     "color": [2, 2, 2],
