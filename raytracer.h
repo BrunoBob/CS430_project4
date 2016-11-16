@@ -9,6 +9,7 @@
 #define ERROR_WRITING 3
 
 #define EPSILON 0.01
+#define LEVEL_MAX_SHADE 5
 
 typedef struct object{
   int kind; // 0 = sphere, 1 = plane
@@ -48,7 +49,9 @@ void printLights(lightList list);
 
 double shoot(double* Ro, double* Rd, objectList object);
 
-double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT, int level);
+double* getRefractedRay(double* N, double ior1, double ior2, double* Rd);
+
+double* shade(lightList light, objectList allObject, objectList object, double* Ro, double* Rd, double bestT, int level, double ior);
 
 double* directShade(double* color, lightList light, objectList object, double* Rdn, double* Rd, double* Vo, double* Ron, double dist);
 
@@ -96,6 +99,10 @@ static inline double dotProduct(double* a, double* b){
 
 static inline double sqr(double v) {
   return v*v;
+}
+
+static inline double norm(double* a){
+  return sqrt((a[0] * a[0]) + (a[1] * a[1]) * (a[2] * a[2]));
 }
 
 static inline void normalize(double* v) {
